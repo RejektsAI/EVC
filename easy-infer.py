@@ -344,6 +344,7 @@ def get_indexes():
         return indexes_list
     else:
         return ''
+        
 audio_files=[]
 for dirpath, dirnames, filenames in os.walk("."):
         for filename in filenames:
@@ -359,8 +360,12 @@ def audios():
                     audio_files.append(filename)
     return audio_files
 
-audio_files = audios()
-    
+def get_name():
+    if len(audio_files) > 0:
+        return sorted(audio_files)[0]
+    else:
+        return ''
+        
 def save_to_wav(record_button):
     shutil.move(record_button,'audios/recording.wav')
 
@@ -391,7 +396,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 record_button=gr.Audio(source="microphone", label="OR Record audio.", type="filepath")
             with gr.Row():
             #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
-                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=sorted(audio_files)[0])
+                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=get_name())
                 dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
