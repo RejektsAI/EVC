@@ -356,6 +356,8 @@ def save_to_wav(record_button):
 #with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Row():
+        warntext=gr.Markdown("Do not call your audio 'audio.wav' since that is used by the program to keep track of temporary files.")
+    with gr.Row():
         sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names), value=sorted(names)[0])
         get_vc(sorted(names)[0])
         vc_transform0 = gr.Number(label="Optional: You can change the pitch here or leave it at 0.", value=0)
@@ -405,12 +407,13 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 value="pm",
                 interactive=True,
                 )
-            instructions = gr.Markdown("""
+    with gr.Row():
+        vc_output1 = gr.Textbox(label="")
+    with gr.Row():
+        instructions = gr.Markdown("""
             This is simply a modified version of the RVC GUI found here: 
             https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
             """)
-    with gr.Row():
-        vc_output1 = gr.Textbox(label="")
     f0_file = gr.File(label="F0 Curve File (Optional, One Pitch Per Line, Replaces Default F0 and Pitch Shift)", visible=False)        
     but0.click(
         vc_single,
