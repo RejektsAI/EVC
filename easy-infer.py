@@ -6,12 +6,13 @@ from time import sleep
 import torch, os, traceback, sys, warnings, shutil, numpy as np
 import faiss
 from random import shuffle
-
+import scipy.io.wavfile as wavfile
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
+os.makedirs("audios",exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
@@ -19,6 +20,7 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 from i18n import I18nAuto
 import ffmpeg
+
 
 i18n = I18nAuto()
 # 判断是否有能用来训练和加速推理的N卡
@@ -125,6 +127,7 @@ names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
+        
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth"):
@@ -306,7 +309,7 @@ def change_choices2():
     audio_files = []
     for dirpath, dirnames, filenames in os.walk("."):
         for filename in filenames:
-            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav'):
+            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav', 'audio.wav'):
                 if "tmp" not in filename:
                     audio_files.append(filename)
     return {"choices": sorted(audio_files), "__type__": "update"}
@@ -329,7 +332,12 @@ def get_index():
         return ''
     else:
         return ''
-
+audio_files=[]
+for dirpath, dirnames, filenames in os.walk("."):
+        for filename in filenames:
+            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav'):
+                if "tmp" not in filename:
+                    audio_files.append(filename)
 def audios():
     audio_files = []
     for dirpath, dirnames, filenames in os.walk("."):
@@ -340,13 +348,16 @@ def audios():
     return audio_files
 
 audio_files = audios()
+    
+def save_to_wav(record_button):
+    shutil.move(record_button,'audios/recording.wav')
+    change_choices2()
 
-def uploaded(dropbox):
-    dropbox.clear()
-
+#with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Row():
-        sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names))
+        sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names), value=sorted(names)[0])
+        get_vc(sorted(names)[0])
         vc_transform0 = gr.Number(label="Optional: You can change the pitch here or leave it at 0.", value=0)
         #refresh_button = gr.Button("Refresh Voice List", variant="primary")
         #refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
@@ -363,12 +374,15 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
         with gr.Column():
             with gr.Row():
                 dropbox = gr.File(label="Drop your audio here & hit the Reload button.")
-                dropbox.upload(fn=uploaded)
+            with gr.Row():
+                record_button=gr.Audio(source="microphone", label="OR Record audio.", type="filepath")
             with gr.Row():
             #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
-                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.")
+                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=sorted(audio_files)[0])
+                dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
+            record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[refresh_button2])
             f0method0 = gr.Radio(
                 label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
                 choices=["pm", "harvest"],
