@@ -334,6 +334,7 @@ def audios():
     for dirpath, dirnames, filenames in os.walk("."):
         for filename in filenames:
             if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav'):
+                if "tmp" not in filename:
                     audio_files.append(filename)
     return audio_files
 
