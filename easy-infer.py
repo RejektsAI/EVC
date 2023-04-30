@@ -325,11 +325,23 @@ def change_sr2(sr2, if_f0_3):
         
 def get_index():
     if iscolab:
-        for root, dirs, files in os.walk("/content/Retrieval-based-Voice-Conversion-WebUI/logs/"):
-            for file in files:
-                if file.endswith(".index"):
-                    return os.path.join(root, file)
+        chosen_model=sorted(names)[0].split(".")[0]
+        logs_path="/content/Retrieval-based-Voice-Conversion-WebUI/logs/"+chosen_model
+        for file in os.listdir(logs_path):
+            if file.endswith(".index"):
+                return os.path.join(logs_path, file)
         return ''
+    else:
+        return ''
+        
+def get_indexes():
+    indexes_list=[]
+    if iscolab:
+        for dirpath, dirnames, filenames in os.walk("/content/Retrieval-based-Voice-Conversion-WebUI/logs/"):
+            for filename in filenames:
+                if filename.endswith(".index"):
+                    indexes_list.append(os.path.join(dirpath,filename))
+        return indexes_list
     else:
         return ''
 audio_files=[]
@@ -386,9 +398,10 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
             record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[refresh_button2])
         with gr.Column():
-            file_index1 = gr.Textbox(
+            file_index1 = gr.Dropdown(
                 label="3. Path to your added.index file (if it didn't automatically find it.)",
                 value=get_index(),
+                choices=get_indexes(),
                 interactive=True,
             )
             index_rate1 = gr.Slider(
