@@ -375,7 +375,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
             )
         with gr.Column():
             file_index1 = gr.Textbox(
-                label="4. Path to your added.index file (if it didn't automatically find it.)",
+                label="3. Path to your added.index file (if it didn't automatically find it.)",
                 value=get_index(),
                 interactive=True,
             )
