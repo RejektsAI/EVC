@@ -363,7 +363,6 @@ audio_files = audios()
     
 def save_to_wav(record_button):
     shutil.move(record_button,'audios/recording.wav')
-    change_choices2()
 
 #with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
@@ -396,7 +395,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
-            record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[refresh_button2])
+            record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[])
         with gr.Column():
             file_index1 = gr.Dropdown(
                 label="3. Path to your added.index file (if it didn't automatically find it.)",
