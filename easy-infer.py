@@ -344,10 +344,10 @@ def uploaded(dropbox):
 
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Row():
-        sid0 = gr.Dropdown(label="Inference Voice:", choices=sorted(names))
-        vc_transform0 = gr.Number(label="Pitch:", value=0)
-        refresh_button = gr.Button("Refresh Voice List", variant="primary")
-        refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
+        sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names))
+        vc_transform0 = gr.Number(label="Optional: You can change the pitch here or leave it at 0.", value=0)
+        #refresh_button = gr.Button("Refresh Voice List", variant="primary")
+        #refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
         #clean_button = gr.Button("Unload Voice to Save Memory", variant="primary")
         spk_item = gr.Slider(minimum=0,maximum=2333,step=1,label="Please select speaker id",value=0,visible=False,interactive=True)
         #clean_button.click(fn=clean, inputs=[], outputs=[sid0])
@@ -360,22 +360,22 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Row():
         with gr.Column():
             with gr.Row():
-                dropbox = gr.File(label="Drop files here & hit the Reload button.")
+                dropbox = gr.File(label="Drop your audio here & hit the Reload button.")
                 dropbox.upload(fn=uploaded)
             with gr.Row():
             #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
-                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="Choose your audio.")
+                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.")
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
             f0method0 = gr.Radio(
-                label="Choose the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
+                label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
                 choices=["pm", "harvest"],
                 value="pm",
                 interactive=True,
             )
         with gr.Column():
             file_index1 = gr.Textbox(
-                label="Path to your added.index file:",
+                label="4. Path to your added.index file (if it didn't automatically find it.)",
                 value=get_index(),
                 interactive=True,
             )
@@ -386,11 +386,15 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 value=0.69,
                 interactive=True,
             )
-        f0_file = gr.File(label="F0 Curve File (Optional, One Pitch Per Line, Replaces Default F0 and Pitch Shift)", visible=False)
-    with gr.Row():
-        vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)")      
+            with gr.Row():
+                vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)")  
+            instructions = gr.Markdown("""
+            This is simply a modified version of the RVC GUI found here: 
+            https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
+            """)
     with gr.Row():
         vc_output1 = gr.Textbox(label="")
+    f0_file = gr.File(label="F0 Curve File (Optional, One Pitch Per Line, Replaces Default F0 and Pitch Shift)", visible=False)        
     but0.click(
         vc_single,
         [
