@@ -383,12 +383,6 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
             record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[refresh_button2])
-            f0method0 = gr.Radio(
-                label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
-                choices=["pm", "harvest"],
-                value="pm",
-                interactive=True,
-            )
         with gr.Column():
             file_index1 = gr.Textbox(
                 label="3. Path to your added.index file (if it didn't automatically find it.)",
@@ -403,7 +397,14 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 interactive=True,
             )
             with gr.Row():
-                vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)")  
+                vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)") 
+            with gr.Row():
+                f0method0 = gr.Radio(
+                label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
+                choices=["pm", "harvest"],
+                value="pm",
+                interactive=True,
+                )
             instructions = gr.Markdown("""
             This is simply a modified version of the RVC GUI found here: 
             https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
