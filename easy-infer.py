@@ -21,7 +21,7 @@ torch.manual_seed(114514)
 from i18n import I18nAuto
 import ffmpeg
 import datetime
-
+import subprocess
 
 i18n = I18nAuto()
 # 判断是否有能用来训练和加速推理的N卡
@@ -323,15 +323,16 @@ def change_sr2(sr2, if_f0_3):
         return "pretrained/G%s.pth" % sr2, "pretrained/D%s.pth" % sr2
         
 def get_index():
-    if iscolab:
-        chosen_model=sorted(names)[0].split(".")[0]
-        logs_path="/content/Retrieval-based-Voice-Conversion-WebUI/logs/"+chosen_model
-        for file in os.listdir(logs_path):
-            if file.endswith(".index"):
-                return os.path.join(logs_path, file)
-        return ''
-    else:
-        return ''
+    if check_for_name() != '':
+        if iscolab:
+            chosen_model=sorted(names)[0].split(".")[0]
+            logs_path="/content/Retrieval-based-Voice-Conversion-WebUI/logs/"+chosen_model
+            for file in os.listdir(logs_path):
+                if file.endswith(".index"):
+                    return os.path.join(logs_path, file)
+            return ''
+        else:
+            return ''
         
 def get_indexes():
     indexes_list=[]
@@ -378,86 +379,148 @@ def match_index(speaker):
             index_path=os.path.join(parent_dir,filename)
             return index_path
             
+def download_from_url(url, model):
+    url = url.strip()
+    if url == '':
+        return "URL cannot be left empty."
+    zip_dirs = ["zips", "unzips"]
+    for directory in zip_dirs:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+    os.makedirs("zips", exist_ok=True)
+    os.makedirs("unzips", exist_ok=True)
+    zipfile = model + '.zip'
+    zipfile_path = './zips/' + zipfile
+    MODELEPOCH = ''
+    if "drive.google.com" in url:
+        subprocess.run(["gdown", url, "--fuzzy", "-O", zipfile_path])
+    elif "mega.nz" in url:
+        m = Mega()
+        m.download_url(url, './zips')
+    else:
+        subprocess.run(["wget", url, "-O", f"./zips/{zipfile}"])
+    for filename in os.listdir("./zips"):
+        if filename.endswith(".zip"):
+            zipfile_path = os.path.join("./zips/",filename)
+            shutil.unpack_archive(zipfile_path, "./unzips", 'zip')
+        else:
+            return "No zipfile found."
+    for root, dirs, files in os.walk('./unzips'):
+        for file in files:
+            if "G_" in file:
+                MODELEPOCH = file.split("G_")[1].split(".")[0]
+        if MODELEPOCH == '':
+            MODELEPOCH = '404'
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file.endswith(".npy") or file.endswith(".index"):
+                subprocess.run(["mkdir", "-p", f"./logs/{model}"])
+                subprocess.run(["mv", file_path, f"./logs/{model}/"])
+            elif "G_" not in file and "D_" not in file and file.endswith(".pth"):
+                subprocess.run(["mv", file_path, f"./weights/{model}.pth"])
+    shutil.rmtree("zips")
+    shutil.rmtree("unzips")
+    return "Success."
+
+def check_for_name():
+    if len(names) > 0:
+        return sorted(names)[0]
+    else:
+        return ''
+print(check_for_name())        
 #with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
-    with gr.Row():
-        sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names), value=sorted(names)[0])
-        get_vc(sorted(names)[0])
-        vc_transform0 = gr.Number(label="Optional: You can change the pitch here or leave it at 0.", value=0)
-        #refresh_button = gr.Button("Refresh Voice List", variant="primary")
-        #refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
-        #clean_button = gr.Button("Unload Voice to Save Memory", variant="primary")
-        spk_item = gr.Slider(minimum=0,maximum=2333,step=1,label="Please select speaker id",value=0,visible=False,interactive=True)
-        #clean_button.click(fn=clean, inputs=[], outputs=[sid0])
-        sid0.change(
-            fn=get_vc,
-            inputs=[sid0],
-            outputs=[],
-        )
-        but0 = gr.Button("Convert", variant="primary")
-    with gr.Row():
-        with gr.Column():
-            with gr.Row():
-                dropbox = gr.File(label="Drop your audio here & hit the Reload button.")
-            with gr.Row():
-                record_button=gr.Audio(source="microphone", label="OR Record audio.", type="filepath")
-            with gr.Row():
-            #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
-                input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=get_name())
-                dropbox.upload(fn=save_to_wav2, inputs=[dropbox], outputs=[input_audio0])
-                dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
-                refresh_button2 = gr.Button("Reload Audios", variant="primary")
-                refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
-                record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[input_audio0])
-                record_button.change(fn=change_choices2, inputs=[], outputs=[input_audio0])
-        with gr.Column():
-            with gr.Accordion(label="Feature Settings", open=False):
-                file_index1 = gr.Dropdown(
-                    label="3. Path to your added.index file (if it didn't automatically find it.)",
-                    value=get_index(),
-                    choices=get_indexes(),
+    with gr.Tab("Inference"):
+        with gr.Row():
+            sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names), value=check_for_name())
+            refresh_button = gr.Button("Refresh", variant="primary", size='sm')
+            refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
+            if check_for_name() != '':
+                get_vc(sorted(names)[0])
+            else:
+                print("Starting without preloaded Model.")
+            vc_transform0 = gr.Number(label="Optional: You can change the pitch here or leave it at 0.", value=0)
+            #clean_button = gr.Button("Unload Voice to Save Memory", variant="primary")
+            spk_item = gr.Slider(minimum=0,maximum=2333,step=1,label="Please select speaker id",value=0,visible=False,interactive=True)
+            #clean_button.click(fn=clean, inputs=[], outputs=[sid0])
+            sid0.change(
+                fn=get_vc,
+                inputs=[sid0],
+                outputs=[],
+            )
+            but0 = gr.Button("Convert", variant="primary")
+        with gr.Row():
+            with gr.Column():
+                with gr.Row():
+                    dropbox = gr.File(label="Drop your audio here & hit the Reload button.")
+                with gr.Row():
+                    record_button=gr.Audio(source="microphone", label="OR Record audio.", type="filepath")
+                with gr.Row():
+                #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
+                    input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=get_name())
+                    dropbox.upload(fn=save_to_wav2, inputs=[dropbox], outputs=[input_audio0])
+                    dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
+                    refresh_button2 = gr.Button("Refresh", variant="primary", size='sm')
+                    refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
+                    record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[input_audio0])
+                    record_button.change(fn=change_choices2, inputs=[], outputs=[input_audio0])
+            with gr.Column():
+                with gr.Accordion(label="Feature Settings", open=False):
+                    file_index1 = gr.Dropdown(
+                        label="3. Path to your added.index file (if it didn't automatically find it.)",
+                        value=get_index(),
+                        choices=get_indexes(),
+                        interactive=True,
+                        visible=True
+                    )
+                    index_rate1 = gr.Slider(
+                    minimum=0,
+                    maximum=1,
+                    label="Strength:",
+                    value=0.69,
                     interactive=True,
-                    visible=True
-                )
-                index_rate1 = gr.Slider(
-                minimum=0,
-                maximum=1,
-                label="Strength:",
-                value=0.69,
-                interactive=True,
-                )
-            sid0.change(fn=match_index, inputs=[sid0], outputs=[file_index1])
-            
-            with gr.Row():
-                vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)") 
-            with gr.Row():
-                f0method0 = gr.Radio(
-                label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
-                choices=["pm", "harvest"],
-                value="pm",
-                interactive=True,
-                )
-    with gr.Row():
-        vc_output1 = gr.Textbox(label="")
-    with gr.Row():
-        instructions = gr.Markdown("""
-            This is simply a modified version of the RVC GUI found here: 
-            https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
-            """)
-    f0_file = gr.File(label="F0 Curve File (Optional, One Pitch Per Line, Replaces Default F0 and Pitch Shift)", visible=False)        
-    but0.click(
-        vc_single,
-        [
-            spk_item,
-            input_audio0,
-            vc_transform0,
-            f0_file,
-            f0method0,
-            file_index1,
-            index_rate1,
-        ],
-        [vc_output1, vc_output2]
-    )
+                    )
+                sid0.change(fn=match_index, inputs=[sid0], outputs=[file_index1])
+                
+                with gr.Row():
+                    vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)") 
+                with gr.Row():
+                    f0method0 = gr.Radio(
+                    label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
+                    choices=["pm", "harvest"],
+                    value="pm",
+                    interactive=True,
+                    )
+        with gr.Row():
+            vc_output1 = gr.Textbox(label="")
+        with gr.Row():
+            instructions = gr.Markdown("""
+                This is simply a modified version of the RVC GUI found here: 
+                https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
+                """)
+        f0_file = gr.File(label="F0 Curve File (Optional, One Pitch Per Line, Replaces Default F0 and Pitch Shift)", visible=False)        
+        but0.click(
+            vc_single,
+            [
+                spk_item,
+                input_audio0,
+                vc_transform0,
+                f0_file,
+                f0method0,
+                file_index1,
+                index_rate1,
+            ],
+            [vc_output1, vc_output2]
+        )
+    with gr.Tab("Download Model"):
+        with gr.Row():
+            url=gr.Textbox(label="Enter the URL to the Model:")
+        with gr.Row():
+            model = gr.Textbox(label="Name your model:")
+            download_button=gr.Button(label="Download")
+        with gr.Row():
+            status_bar=gr.Textbox(label="")
+            download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
     if iscolab:
         app.launch(share=True)
     else:
