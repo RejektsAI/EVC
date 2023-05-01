@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 from i18n import I18nAuto
 import ffmpeg
+import datetime
 
 
 i18n = I18nAuto()
@@ -306,12 +307,10 @@ def change_choices():
     return {"choices": sorted(names), "__type__": "update"}
 
 def change_choices2():
-    audio_files = []
-    for dirpath, dirnames, filenames in os.walk("."):
-        for filename in filenames:
-            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav', 'audio.wav'):
-                if "tmp" not in filename:
-                    audio_files.append(filename)
+    audio_files=[]
+    for filename in os.listdir("./audios"):
+        if filename.endswith(('.wav','.mp3')):
+            audio_files.append(filename)
     return {"choices": sorted(audio_files), "__type__": "update"}
 
 def clean():
@@ -346,20 +345,10 @@ def get_indexes():
         return ''
         
 audio_files=[]
-for dirpath, dirnames, filenames in os.walk("."):
-        for filename in filenames:
-            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav'):
-                if "tmp" not in filename:
-                    audio_files.append(filename)
-def audios():
-    audio_files = []
-    for dirpath, dirnames, filenames in os.walk("."):
-        for filename in filenames:
-            if filename.endswith(('.wav', '.mp3')) and filename not in ('mute.wav', 'mute32k.wav', 'mute40k.wav', 'mute48k.wav'):
-                if "tmp" not in filename:
-                    audio_files.append(filename)
-    return audio_files
-
+for filename in os.listdir("./audios"):
+    if filename.endswith(('.wav','.mp3')):
+        audio_files.append(filename)
+        
 def get_name():
     if len(audio_files) > 0:
         return sorted(audio_files)[0]
@@ -367,7 +356,19 @@ def get_name():
         return ''
         
 def save_to_wav(record_button):
-    shutil.move(record_button,'audios/recording.wav')
+    if record_button is None:
+        pass
+    else:
+        path_to_file=record_button
+        new_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+'.wav'
+        new_path='./audios/'+new_name
+        shutil.move(path_to_file,new_path)
+        return new_name
+    
+def save_to_wav2(dropbox):
+    file_path=dropbox.name
+    shutil.move(file_path,'./audios')
+    return os.path.basename(file_path)
     
 def match_index(speaker):
     folder=speaker.split(".")[0]
@@ -379,8 +380,6 @@ def match_index(speaker):
             
 #with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
-    with gr.Row():
-        warntext=gr.Markdown("Do not call your audio 'audio.wav' since that is used by the program to keep track of temporary files.")
     with gr.Row():
         sid0 = gr.Dropdown(label="1.Choose your Model.", choices=sorted(names), value=sorted(names)[0])
         get_vc(sorted(names)[0])
@@ -405,25 +404,30 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
             with gr.Row():
             #input_audio0 = gr.Textbox(label="Enter the Path to the Audio File to be Processed (e.g. /content/youraudio.wav)",value="/content/youraudio.wav")
                 input_audio0 = gr.Dropdown(choices=sorted(audio_files), label="2.Choose your audio.", value=get_name())
+                dropbox.upload(fn=save_to_wav2, inputs=[dropbox], outputs=[input_audio0])
                 dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
                 refresh_button2 = gr.Button("Reload Audios", variant="primary")
                 refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
-            record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[])
+                record_button.change(fn=save_to_wav, inputs=[record_button], outputs=[input_audio0])
+                record_button.change(fn=change_choices2, inputs=[], outputs=[input_audio0])
         with gr.Column():
-            file_index1 = gr.Dropdown(
-                label="3. Path to your added.index file (if it didn't automatically find it.)",
-                value=get_index(),
-                choices=get_indexes(),
-                interactive=True,
-            )
-            sid0.change(fn=match_index, inputs=[sid0], outputs=[file_index1])
-            index_rate1 = gr.Slider(
+            with gr.Accordion(label="Feature Settings", open=False):
+                file_index1 = gr.Dropdown(
+                    label="3. Path to your added.index file (if it didn't automatically find it.)",
+                    value=get_index(),
+                    choices=get_indexes(),
+                    interactive=True,
+                    visible=True
+                )
+                index_rate1 = gr.Slider(
                 minimum=0,
                 maximum=1,
                 label="Strength:",
                 value=0.69,
                 interactive=True,
-            )
+                )
+            sid0.change(fn=match_index, inputs=[sid0], outputs=[file_index1])
+            
             with gr.Row():
                 vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)") 
             with gr.Row():
