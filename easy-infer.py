@@ -368,7 +368,15 @@ def get_name():
         
 def save_to_wav(record_button):
     shutil.move(record_button,'audios/recording.wav')
-
+    
+def match_index(speaker):
+    folder=speaker.split(".")[0]
+    parent_dir="/content/Retrieval-based-Voice-Conversion-WebUI/logs/"+folder
+    for filename in os.listdir(parent_dir):
+        if filename.endswith(".index"):
+            index_path=os.path.join(parent_dir,filename)
+            return index_path
+            
 #with gr.Blocks() as app
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Row():
@@ -408,6 +416,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 choices=get_indexes(),
                 interactive=True,
             )
+            sid0.change(fn=match_index, inputs=[sid0], outputs=[file_index1])
             index_rate1 = gr.Slider(
                 minimum=0,
                 maximum=1,
