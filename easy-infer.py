@@ -7,6 +7,8 @@ import torch, os, traceback, sys, warnings, shutil, numpy as np
 import faiss
 from random import shuffle
 import scipy.io.wavfile as wavfile
+from mega import Mega
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
