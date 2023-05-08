@@ -490,9 +490,9 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                     vc_output2 = gr.Audio(label="Output Audio (Click on the Three Dots in the Right Corner to Download)") 
                 with gr.Row():
                     f0method0 = gr.Radio(
-                    label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow)",
+                    label="Optional: Change the Pitch Extraction Algorithm. Use PM for fast results or Harvest for better low range (but it's extremely slow) or Crepe for the best of both worlds.",
                     choices=["pm", "harvest","crepe"],
-                    value="pm",
+                    value="crepe",
                     interactive=True,
                     )
                     crepe_hop_length = gr.Slider(
