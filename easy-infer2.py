@@ -9,7 +9,7 @@ from random import shuffle
 import scipy.io.wavfile as wavfile
 from mega import Mega
 from config import Config
-
+from pyngrok import ngrok
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
@@ -535,13 +535,18 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
         with gr.Row():
             status_bar=gr.Textbox(label="")
             download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
-            
-    if config.iscolab or config.paperspace: # Share gradio link for colab and paperspace (FORK FEATURE)
-        app.queue(concurrency_count=511, max_size=1022).launch(share=True)
-    else:
-        app.queue(concurrency_count=511, max_size=1022).launch(
-            server_name="0.0.0.0",
-            inbrowser=not config.noautoopen,
-            server_port=config.listen_port,
-            quiet=True,
-        )
+    try:
+      public_url = ngrok.connect(7860)
+      print('Click on THIS link: '+public_url)        
+      if config.iscolab or config.paperspace: # Share gradio link for colab and paperspace (FORK FEATURE)
+          app.launch(share=False)
+      else:
+          app.launch(
+              server_name="0.0.0.0",
+              inbrowser=not config.noautoopen,
+              server_port=config.listen_port,
+              quiet=True,
+          )
+    except KeyboardInterrupt:
+      ngrok.disconnect(public_url)
+      ngrok.kill()
