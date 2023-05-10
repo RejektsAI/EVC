@@ -8,7 +8,7 @@ import faiss
 from random import shuffle
 import scipy.io.wavfile as wavfile
 from mega import Mega
-
+from pyngrok import ngrok
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
@@ -528,7 +528,15 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
             status_bar=gr.Textbox(label="")
             download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
     if iscolab:
-        app.launch(share=True)
+        try:
+            public_url = ngrok.connect(7860)
+            print('Click on THIS link: '+public_url)
+        except:
+            print('Failed to create ngrok URL')
+        try:
+            app.launch(share=True)
+        except KeyboardInterrupt:
+            ngrok.kill()
     else:
         app.queue(concurrency_count=511, max_size=1022).launch(
             server_name="0.0.0.0",
