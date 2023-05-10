@@ -535,18 +535,21 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
         with gr.Row():
             status_bar=gr.Textbox(label="")
             download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
-    try:
-      public_url = ngrok.connect(7860)
-      print('Click on THIS link: '+public_url)        
-      if config.iscolab or config.paperspace: # Share gradio link for colab and paperspace (FORK FEATURE)
-          app.launch(share=False)
-      else:
-          app.launch(
-              server_name="0.0.0.0",
-              inbrowser=not config.noautoopen,
-              server_port=config.listen_port,
-              quiet=True,
-          )
-    except KeyboardInterrupt:
-      ngrok.disconnect(public_url)
-      ngrok.kill()
+       
+    if config.iscolab or config.paperspace: # Share gradio link for colab and paperspace (FORK FEATURE)
+        try:
+            public_url = ngrok.connect(7860)
+            print('Click on THIS link: '+public_url)
+        except:
+            print('Failed to create ngrok URL')
+        try:
+            app.launch(share=True)
+        except KeyboardInterrupt:
+            ngrok.kill()
+    else:
+        app.launch(
+          server_name="0.0.0.0",
+          inbrowser=not config.noautoopen,
+          server_port=config.listen_port,
+          quiet=True,
+        )
