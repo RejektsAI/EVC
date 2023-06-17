@@ -89,7 +89,7 @@ from train.process_ckpt import show_info, change_info, merge, extract_small_mode
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 
-class ToolButton(gr.Button, gr.components.FormComponent):
+class ToolButton(gr.Button, gr.components.IOComponent):
     """Small button with single emoji as text, fits inside gradio forms"""
 
     def __init__(self, **kwargs):
