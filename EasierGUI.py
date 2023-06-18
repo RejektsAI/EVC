@@ -1643,7 +1643,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                     with gr.Row():
                         input_audio0 = gr.Dropdown(
                             label="2.Choose your audio.",
-                            value="./audios/now.wav",
+                            value="./audios/someguy.mp3",
                             )
                         dropbox.upload(fn=save_to_wav2, inputs=[dropbox], outputs=[input_audio0])
                         dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
@@ -1879,7 +1879,8 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 https://paypal.me/lesantillan
                 """
                 )
-        with gr.TabItem("Train"):
+                '''
+        with gr.TabItem("Train", visible=False):
             with gr.Row():
                 exp_dir1 = gr.Textbox(label="Voice Name:", value="My-Voice")
                 sr2 = gr.Radio(
@@ -2104,7 +2105,7 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                 gr.Markdown(value=info)
             except:
                 gr.Markdown(traceback.format_exc())
-
+'''
 
     #region Mangio Preset Handler Region
     def save_preset(
