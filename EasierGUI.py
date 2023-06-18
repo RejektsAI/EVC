@@ -1,5 +1,5 @@
-import torch, os, traceback, sys, warnings, shutil, numpy as np
-
+import subprocess, torch, os, traceback, sys, warnings, shutil, numpy as np
+from mega import Mega
 os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
 import threading
 from time import sleep
@@ -147,7 +147,7 @@ def vc_single(
     f0_file,
     f0_method,
     file_index,
-    file_index2,
+    #file_index2,
     # file_big_npy,
     index_rate,
     filter_radius,
@@ -178,8 +178,6 @@ def vc_single(
                 .strip(" ")
                 .replace("trained", "added")
             )
-            if file_index != ""
-            else file_index2
         )  # 防止小白写错，自动帮他替换掉
         # file_big_npy = (
         #     file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -1557,6 +1555,49 @@ def check_for_name():
     else:
         return ''
             
+def download_from_url(url, model):
+    url = url.strip()
+    if url == '':
+        return "URL cannot be left empty."
+    zip_dirs = ["zips", "unzips"]
+    for directory in zip_dirs:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+    os.makedirs("zips", exist_ok=True)
+    os.makedirs("unzips", exist_ok=True)
+    zipfile = model + '.zip'
+    zipfile_path = './zips/' + zipfile
+    MODELEPOCH = ''
+    if "drive.google.com" in url:
+        subprocess.run(["gdown", url, "--fuzzy", "-O", zipfile_path])
+    elif "mega.nz" in url:
+        m = Mega()
+        m.download_url(url, './zips')
+    else:
+        subprocess.run(["wget", url, "-O", f"./zips/{zipfile}"])
+    for filename in os.listdir("./zips"):
+        if filename.endswith(".zip"):
+            zipfile_path = os.path.join("./zips/",filename)
+            shutil.unpack_archive(zipfile_path, "./unzips", 'zip')
+        else:
+            return "No zipfile found."
+    for root, dirs, files in os.walk('./unzips'):
+        for file in files:
+            if "G_" in file:
+                MODELEPOCH = file.split("G_")[1].split(".")[0]
+        if MODELEPOCH == '':
+            MODELEPOCH = '404'
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file.endswith(".npy") or file.endswith(".index"):
+                subprocess.run(["mkdir", "-p", f"./logs/{model}"])
+                subprocess.run(["mv", file_path, f"./logs/{model}/"])
+            elif "G_" not in file and "D_" not in file and file.endswith(".pth"):
+                subprocess.run(["mv", file_path, f"./weights/{model}.pth"])
+    shutil.rmtree("zips")
+    shutil.rmtree("unzips")
+    return "Success."
+    
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Tabs():
         with gr.TabItem("Inference"):
@@ -1819,6 +1860,15 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
                         ],
                         [vc_output3],
                     )
+        with gr.TabItem("Download Model"):
+            with gr.Row():
+                url=gr.Textbox(label="Enter the URL to the Model:")
+            with gr.Row():
+                model = gr.Textbox(label="Name your model:")
+                download_button=gr.Button(label="Download")
+            with gr.Row():
+                status_bar=gr.Textbox(label="")
+                download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
         with gr.TabItem("Train"):
             with gr.Row():
                 exp_dir1 = gr.Textbox(label="Voice Name:", value="My-Voice")
@@ -2165,13 +2215,14 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
     #         # f0_file
     #     ]
     # )
-    #endregion
+
 
         # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
         #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
         # with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
         #     gr.Markdown(value=i18n("xxxxx"))
 
+                
     if config.iscolab or config.paperspace: # Share gradio link for colab and paperspace (FORK FEATURE)
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
@@ -2181,5 +2232,3 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
             server_port=config.listen_port,
             quiet=True,
         )
-
-#endregion
