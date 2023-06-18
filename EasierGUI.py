@@ -1601,6 +1601,7 @@ def download_from_url(url, model):
 with gr.Blocks(theme=gr.themes.Base()) as app:
     with gr.Tabs():
         with gr.TabItem("Inference"):
+            gr.HTML("<h1> Easy GUI v2 (rejekts) - adapted to Mangio-RVC-Fork 💻 </h1>")
             # Inference Preset Row
             # with gr.Row():
             #     mangio_preset = gr.Dropdown(label="Inference Preset", choices=sorted(get_presets()))
@@ -1869,6 +1870,15 @@ with gr.Blocks(theme=gr.themes.Base()) as app:
             with gr.Row():
                 status_bar=gr.Textbox(label="")
                 download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
+            with gr.Row():
+                gr.Markdown(
+                """
+                Original RVC:https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI
+                Mangio's RVC Fork:https://github.com/Mangio621/Mangio-RVC-Fork
+                ❤️ If you like the EasyGUI, help me keep it.❤️ 
+                https://paypal.me/lesantillan
+                """
+                )
         with gr.TabItem("Train"):
             with gr.Row():
                 exp_dir1 = gr.Textbox(label="Voice Name:", value="My-Voice")
