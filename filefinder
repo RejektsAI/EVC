@@ -1,0 +1,7 @@
+import os
+def find_at(file_name, search_path='/'):
+    found_files = []
+    for root, dirs, files in os.walk(search_path):
+        if file_name in files:
+            found_files.append(os.path.join(root, file_name))
+    return found_files
